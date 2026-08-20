@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ORGANISER
+  ADMIN
+}
+
+enum SeatStatus {
+  AVAILABLE
+  HELD
+  BOOKED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum WaitlistStatus {
+  WAITING
+  OFFERED
+  BOOKED
+  EXPIRED
+}
+
+enum EventType {
+  MOVIE
+  CONCERT
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  SOLD_OUT
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  hashedPassword String
+  role           Role      @default(CUSTOMER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  bookings  Booking[]
+  waitlist  Waitlist[]
+  events    Event[]    @relation("OrganizerEvents")
+}
+
+model Venue {
+  id          String   @id @default(cuid())
+  name        String
+  address     String
+  totalRows   Int
+  totalCols   Int
+  categories  Json     // e.g. [{ "name": "Premium", "rows": [1,2,3], "price": 500 }, { "name": "Standard", "rows": [4,5,6,7,8], "price": 200 }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events Event[]
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  type        EventType
+  venueId     String
+  venue       Venue       @relation(fields: [venueId], references: [id])
+  organiserId String
+  organiser   User        @relation("OrganizerEvents", fields: [organiserId], references: [id])
+  date        DateTime
+  imageUrl    String?
+  status      EventStatus @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  seats    Seat[]
+  bookings Booking[]
+  waitlist Waitlist[]
+}
+
+model Seat {
+  id             String     @id @default(cuid())
+  eventId        String
+  event          Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  row            Int
+  col            Int
+  label          String     // e.g. "A1", "B3"
+  category       String     // "Premium" | "Standard"
+  price          Float
+  status         SeatStatus @default(AVAILABLE)
+  holdByUserId   String?
+  holdExpiresAt  DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  bookingSeats BookingSeat[]
+  waitlistOffers Waitlist[] @relation("OfferedSeat")
+
+  @@unique([eventId, row, col])
+  @@index([eventId, status])
+  @@index([holdExpiresAt])
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  eventId      String
+  event        Event         @relation(fields: [eventId], references: [id])
+  bookingRef   String        @unique @default(cuid())
+  status       BookingStatus @default(CONFIRMED)
+  totalAmount  Float
+  qrCodeData   String?       // base64 QR or URL
+  cancelledAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  seats BookingSeat[]
+}
+
+model BookingSeat {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seatId    String
+  seat      Seat    @relation(fields: [seatId], references: [id])
+
+  @@unique([bookingId, seatId])
+}
+
+model Waitlist {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  eventId         String
+  event           Event          @relation(fields: [eventId], references: [id])
+  category        String         // which seat category they want
+  status          WaitlistStatus @default(WAITING)
+  offeredSeatId   String?
+  offeredSeat     Seat?          @relation("OfferedSeat", fields: [offeredSeatId], references: [id])
+  offerExpiresAt  DateTime?
+  offerToken      String?        @unique // time-limited token in email link
+  position        Int            // queue position
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([eventId, category, status])
+}

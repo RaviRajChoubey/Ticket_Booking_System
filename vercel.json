@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/release-expired-holds",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/process-waitlist-offers",
+      "schedule": "* * * * *"
+    }
+  ]
+}
