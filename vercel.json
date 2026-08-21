@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/release-expired-holds",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/process-waitlist-offers",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
