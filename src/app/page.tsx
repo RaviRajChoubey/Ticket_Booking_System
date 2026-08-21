@@ -1,29 +1,34 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Calendar, MapPin, Ticket, Shield, Clock, Play, Music, Sparkles, ChevronRight, Star } from "lucide-react";
+import { Calendar, MapPin, Ticket, Shield, Clock, Play, Music, Sparkles, ChevronRight } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { EventFilters } from "@/components/events/event-filters";
 import { prisma } from "@/lib/prisma";
 
 async function getEvents(searchParams: { type?: string; search?: string }) {
-  const where: any = { status: "PUBLISHED" };
-  if (searchParams.type) where.type = searchParams.type;
-  if (searchParams.search) where.title = { contains: searchParams.search, mode: "insensitive" };
+  try {
+    const where: any = { status: "PUBLISHED" };
+    if (searchParams.type) where.type = searchParams.type;
+    if (searchParams.search) where.title = { contains: searchParams.search, mode: "insensitive" };
 
-  const events = await prisma.event.findMany({
-    where,
-    include: {
-      venue: true,
-      seats: { select: { id: true, status: true } },
-      _count: { select: { seats: true } },
-    },
-    orderBy: { date: "asc" },
-  });
+    const events = await prisma.event.findMany({
+      where,
+      include: {
+        venue: true,
+        seats: { select: { id: true, status: true } },
+        _count: { select: { seats: true } },
+      },
+      orderBy: { date: "asc" },
+    });
 
-  return events.map((e) => ({
-    ...e,
-    availableSeats: e.seats.filter((s) => s.status === "AVAILABLE").length,
-  }));
+    return events.map((e) => ({
+      ...e,
+      availableSeats: e.seats.filter((s) => s.status === "AVAILABLE").length,
+    }));
+  } catch (error) {
+    console.error("[GET_EVENTS_ERROR]", error);
+    return [];
+  }
 }
 
 const getHeroGradient = (title: string = "") => {
