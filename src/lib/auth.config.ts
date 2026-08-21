@@ -21,7 +21,9 @@ export const authConfig: NextAuthConfig = {
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
-        const user = await prisma.user.findUnique({ where: { email } });
+        const normalizedEmail = email.toLowerCase().trim();
+
+        const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (!user) return null;
 
         const valid = await bcrypt.compare(password, user.hashedPassword);
