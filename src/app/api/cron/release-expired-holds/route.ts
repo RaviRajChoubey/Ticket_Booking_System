@@ -1,18 +1,21 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { redis, seatHoldKey } from "@/lib/redis";
 import { processWaitlistForCategory } from "@/lib/waitlist";
 import { apiSuccess, apiError } from "@/lib/api-response";
 
 /**
- * Vercel Cron Job — runs every minute
- * Releases seats whose hold TTL has expired
+ * Cron Job — runs periodically or via request
+ * Releases seats whose hold TTL has expired and offers to waitlist
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret if provided in environment
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return apiError("Unauthorized", "UNAUTHORIZED", 401);
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    // allow dev execution if no header passed
+    const isDev = process.env.NODE_ENV !== "production";
+    if (!isDev) {
+      return apiError("Unauthorized", "UNAUTHORIZED", 401);
+    }
   }
 
   try {
@@ -33,18 +36,27 @@ export async function GET(request: NextRequest) {
 
     console.log(`[CRON] Releasing ${expiredSeats.length} expired holds`);
 
-    // Release each expired seat
+    // Release each expired seat in DB
     await prisma.seat.updateMany({
       where: { id: { in: expiredSeats.map((s) => s.id) } },
       data: { status: "AVAILABLE", holdByUserId: null, holdExpiresAt: null },
     });
 
-    // Clean up any lingering Redis keys
-    const pipeline = redis.pipeline();
-    for (const seat of expiredSeats) {
-      pipeline.del(seatHoldKey(seat.eventId, seat.id));
+    // Best-effort Redis cleanup
+    try {
+      const url = process.env.UPSTASH_REDIS_REST_URL ?? "";
+      const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? "";
+      if (url && token && token !== "********" && !url.includes("YOUR")) {
+        const { redis, seatHoldKey } = await import("@/lib/redis");
+        const pipeline = redis.pipeline();
+        for (const seat of expiredSeats) {
+          pipeline.del(seatHoldKey(seat.eventId, seat.id));
+        }
+        await pipeline.exec();
+      }
+    } catch {
+      // Ignore Redis errors
     }
-    await pipeline.exec();
 
     // Process waitlist for each unique event+category combination
     const combinations = [

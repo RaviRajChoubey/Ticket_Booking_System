@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Calendar, MapPin, Star, Ticket, Zap, Shield, Clock } from "lucide-react";
+import { Calendar, MapPin, Ticket, Shield, Clock, Play, Music, Sparkles, ChevronRight, Star } from "lucide-react";
 import { EventCard } from "@/components/events/event-card";
 import { EventFilters } from "@/components/events/event-filters";
 import { prisma } from "@/lib/prisma";
@@ -14,121 +14,245 @@ async function getEvents(searchParams: { type?: string; search?: string }) {
     where,
     include: {
       venue: true,
+      seats: { select: { id: true, status: true } },
       _count: { select: { seats: true } },
     },
     orderBy: { date: "asc" },
-    take: 12,
   });
 
-  return events;
+  return events.map((e) => ({
+    ...e,
+    availableSeats: e.seats.filter((s) => s.status === "AVAILABLE").length,
+  }));
 }
+
+const getHeroGradient = (title: string = "") => {
+  if (title.includes("Coldplay"))     return "from-fuchsia-900 via-purple-900 to-indigo-950";
+  if (title.includes("Rahman"))       return "from-amber-900 via-orange-950 to-red-950";
+  if (title.includes("Interstellar")) return "from-blue-950 via-indigo-950 to-slate-950";
+  if (title.includes("Inception"))    return "from-cyan-950 via-blue-950 to-slate-950";
+  if (title.includes("Dune"))         return "from-amber-950 via-red-950 to-stone-950";
+  return "from-violet-950 via-indigo-950 to-slate-950";
+};
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { type?: string; search?: string };
+  searchParams: Promise<{ type?: string; search?: string }>;
 }) {
-  const events = await getEvents(searchParams);
+  const resolvedParams = await searchParams;
+  const allEvents = await getEvents(resolvedParams);
+
+  const movies   = allEvents.filter((e) => e.type === "MOVIE");
+  const concerts = allEvents.filter((e) => e.type === "CONCERT");
+  const featuredEvent = allEvents[2] || allEvents[0];
 
   return (
-    <div className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden px-4 pt-16 pb-24">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/15 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
-        </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-violet-500/30 text-violet-300 text-sm font-medium mb-6">
-            <Zap className="w-3.5 h-3.5" />
-            Real-time seat selection
-          </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-tight mb-6">
-            Book <span className="gradient-text">tickets</span><br />
-            that matter
-          </h1>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Movies, concerts, and live events — with real-time seat maps,
-            instant QR code tickets, and smart waitlists so you never miss out.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="#events"
-              className="px-8 py-4 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/40 hover:shadow-violet-900/60 hover:-translate-y-0.5"
-            >
-              Browse Events
-            </Link>
-            <Link
-              href="/auth/register"
-              className="px-8 py-4 glass border border-white/10 hover:border-white/20 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5"
-            >
-              Get Started Free
-            </Link>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[hsl(222,47%,6%)] text-white overflow-x-hidden">
 
-        {/* Stats */}
-        <div className="max-w-3xl mx-auto mt-16 grid grid-cols-3 gap-6 relative z-10">
-          {[
-            { value: "10K+", label: "Events booked" },
-            { value: "99.9%", label: "Uptime SLA" },
-            { value: "<1s", label: "Seat hold time" },
-          ].map(({ value, label }) => (
-            <div key={label} className="text-center glass rounded-2xl py-6 border border-white/10">
-              <div className="text-3xl font-extrabold gradient-text">{value}</div>
-              <div className="text-sm text-slate-400 mt-1">{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ══════════════════════════════════════════════════════
+          HERO BANNER (FEATURED EVENT)
+      ══════════════════════════════════════════════════════ */}
+      {featuredEvent && (
+        <section className={`relative w-full overflow-hidden bg-gradient-to-br ${getHeroGradient(featuredEvent.title)} border-b border-white/10`}>
+          {/* Subtle noise/grid backdrop pattern */}
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute -right-20 -top-20 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Features strip */}
-      <section className="border-y border-white/5 bg-white/[0.02] py-10">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {[
-            { icon: Shield, title: "Concurrency-Safe", desc: "Redis atomic locks prevent double-booking" },
-            { icon: Clock, title: "Auto Hold & Release", desc: "10-min hold TTL, auto-release on abandonment" },
-            { icon: Ticket, title: "QR Code Tickets", desc: "Instant QR code emailed on confirmation" },
-          ].map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-violet-600/20 flex items-center justify-center shrink-0">
-                <Icon className="w-5 h-5 text-violet-400" />
+          {/* Centered Max-Width Container */}
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              
+              {/* Left Column: Hero Content */}
+              <div className="lg:col-span-7 space-y-5">
+                {/* Category Badge */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white text-xs sm:text-sm font-semibold tracking-wide uppercase">
+                  <Sparkles className="w-4 h-4 text-yellow-400" />
+                  <span>Featured Event</span>
+                </div>
+
+                {/* Main Hero Heading */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight drop-shadow-lg">
+                  {featuredEvent.title}
+                </h1>
+
+                {/* Date & Venue Metadata */}
+                <div className="flex flex-wrap items-center gap-4 text-sm sm:text-base text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-violet-400" />
+                    <span>{new Date(featuredEvent.date).toLocaleDateString("en-IN", { dateStyle: "full" })}</span>
+                  </div>
+                  <span className="text-slate-500">•</span>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-violet-400" />
+                    <span>{featuredEvent.venue.name}</span>
+                  </div>
+                </div>
+
+                {/* Event Description */}
+                <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl line-clamp-2">
+                  {featuredEvent.description || "Experience the magic of this highly anticipated show. Premium seats available with real-time seat allocation."}
+                </p>
+
+                {/* Call to Action Buttons */}
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <Link
+                    href={`/events/${featuredEvent.id}`}
+                    className="inline-flex items-center gap-2.5 px-6 py-3.5 text-sm sm:text-base font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-xl transition-all shadow-lg shadow-violet-900/50 hover:scale-[1.02]"
+                  >
+                    <Ticket className="w-5 h-5" />
+                    <span>Book Tickets Now</span>
+                  </Link>
+                  <Link
+                    href="#movies"
+                    className="inline-flex items-center gap-2 px-6 py-3.5 text-sm sm:text-base font-semibold text-white bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl backdrop-blur-md transition-all"
+                  >
+                    <span>Browse All</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
+
+              {/* Right Column: Featured Visual Preview Card */}
+              <div className="lg:col-span-5 hidden sm:block">
+                <div className="glass-card rounded-2xl p-6 border border-white/15 relative overflow-hidden shadow-2xl group">
+                  <div className="aspect-[16/9] rounded-xl overflow-hidden bg-slate-900 relative mb-4">
+                    {featuredEvent.imageUrl ? (
+                      <img
+                        src={featuredEvent.imageUrl}
+                        alt={featuredEvent.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-violet-600/40 to-indigo-900/60 flex items-center justify-center">
+                        {featuredEvent.type === "MOVIE" ? (
+                          <Play className="w-16 h-16 text-white/60 fill-white/20" />
+                        ) : (
+                          <Music className="w-16 h-16 text-white/60" />
+                        )}
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 bg-red-600 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow">
+                      LIVE BOOKING
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div>
+                      <div className="font-bold text-white text-base">{featuredEvent.title}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{featuredEvent.venue.name}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-slate-400">Available Seats</div>
+                      <div className="font-bold text-emerald-400 text-base">{featuredEvent.availableSeats} Left</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          STICKY FILTER BAR
+      ══════════════════════════════════════════════════════ */}
+      <div className="sticky top-16 sm:top-20 z-30 bg-[hsl(222,47%,6%)]/95 backdrop-blur-xl border-b border-white/10 shadow-md">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Suspense fallback={<div className="h-10 w-64 bg-white/5 rounded-xl animate-pulse" />}>
+            <EventFilters />
+          </Suspense>
+
+          <div className="hidden lg:flex items-center gap-6 text-xs sm:text-sm text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-emerald-400" />
+              <span>Protected Booking</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-violet-400" />
+              <span>10-Min Seat Hold</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          MAIN CONTENT AREA
+      ══════════════════════════════════════════════════════ */}
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14 space-y-12 lg:space-y-16">
+
+        {/* ── RECOMMENDED MOVIES SECTION ── */}
+        {movies.length > 0 && (
+          <section id="movies" className="space-y-6">
+            <div className="flex items-end justify-between pb-3.5 border-b border-white/10">
               <div>
-                <h3 className="font-semibold text-white">{title}</h3>
-                <p className="text-sm text-slate-400 mt-0.5">{desc}</p>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <span>🎬 Recommended Movies</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                  Blockbuster films showing at premium venues near you
+                </p>
               </div>
+              <Link
+                href="/?type=MOVIE"
+                className="text-xs sm:text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+              >
+                <span>See All</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Events Section */}
-      <section id="events" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-white">Upcoming Events</h2>
-            <p className="text-slate-400 mt-1">
-              {events.length} events available
+            {/* Grid Layout: 3–4 columns on desktop naturally filling screen */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {movies.map((event) => (
+                <EventCard key={event.id} event={event as any} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── MUSIC & LIVE CONCERTS SECTION ── */}
+        {concerts.length > 0 && (
+          <section id="concerts" className="space-y-6">
+            <div className="flex items-end justify-between pb-3.5 border-b border-white/10">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <span>🎵 Music & Live Concerts</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                  Catch your favourite artists live on stage
+                </p>
+              </div>
+              <Link
+                href="/?type=CONCERT"
+                className="text-xs sm:text-sm font-semibold text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+              >
+                <span>See All</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {concerts.map((event) => (
+                <EventCard key={event.id} event={event as any} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── EMPTY STATE ── */}
+        {allEvents.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-24 text-center glass rounded-2xl border border-white/10">
+            <Ticket className="w-16 h-16 text-slate-600 mb-4" />
+            <h3 className="text-xl font-bold text-white">No Events Found</h3>
+            <p className="text-sm text-slate-400 mt-1 max-w-sm">
+              We couldn&apos;t find any events matching your filters. Try clearing filters or check back later!
             </p>
           </div>
-          <EventFilters />
-        </div>
-
-        {events.length === 0 ? (
-          <div className="text-center py-24">
-            <Ticket className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-400">No events found</h3>
-            <p className="text-slate-500 mt-2">Try adjusting your filters</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {events.map((event) => (
-              <EventCard key={event.id} event={event as any} />
-            ))}
-          </div>
         )}
-      </section>
+      </main>
+
     </div>
   );
 }

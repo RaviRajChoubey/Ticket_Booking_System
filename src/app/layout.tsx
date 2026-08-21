@@ -29,7 +29,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-[hsl(222,47%,6%)] text-white font-sans antialiased">
         <Providers>
           <Navbar />
-          <main className="pt-16">{children}</main>
+          <main className="pt-16 sm:pt-20">{children}</main>
           <Toaster />
         </Providers>
       </body>

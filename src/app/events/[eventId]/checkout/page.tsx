@@ -1,25 +1,18 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2, ArrowLeft, CreditCard } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useEffect, useState, use } from "react";
+import { Loader2, CheckCircle2, ArrowLeft, CreditCard, QrCode, Building2, Wallet, Lock, ShieldCheck, AlertCircle } from "lucide-react";
 
-const checkoutSchema = z.object({
-  cardName: z.string().min(2, "Name required"),
-  cardNumber: z.string().regex(/^\d{16}$/, "Enter valid 16-digit card number"),
-  expiry: z.string().regex(/^\d{2}\/\d{2}$/, "Format MM/YY"),
-  cvv: z.string().regex(/^\d{3,4}$/, "Invalid CVV"),
-});
+type PaymentMethod = "UPI" | "CARD" | "NETBANKING" | "WALLET";
 
-type CheckoutForm = z.infer<typeof checkoutSchema>;
+export default function CheckoutPage({ params }: { params: Promise<{ eventId: string }> | { eventId: string } }) {
+  const resolvedParams = typeof (params as any)?.then === "function" ? use(params as Promise<{ eventId: string }>) : (params as { eventId: string });
+  const eventId = resolvedParams?.eventId;
 
-export default function CheckoutPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const seatIds = searchParams.get("seats")?.split(",") || [];
+  const seatIds = searchParams.get("seats")?.split(",").filter(Boolean) || [];
 
   const [seats, setSeats] = useState<any[]>([]);
   const [event, setEvent] = useState<any>(null);
@@ -27,80 +20,109 @@ export default function CheckoutPage({ params }: { params: { eventId: string } }
   const [isBooking, setIsBooking] = useState(false);
   const [bookingRef, setBookingRef] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CheckoutForm>({ resolver: zodResolver(checkoutSchema) });
+  // Form states
+  const [upiId, setUpiId] = useState("user@upi");
+  const [cardName, setCardName] = useState("Ravi Raj Choubey");
+  const [cardNumber, setCardNumber] = useState("4532 8901 2345 6789");
+  const [expiry, setExpiry] = useState("12/28");
+  const [cvv, setCvv] = useState("888");
+  const [selectedBank, setSelectedBank] = useState("HDFC Bank");
+  const [selectedWallet, setSelectedWallet] = useState("Paytm Wallet");
 
   useEffect(() => {
-    if (!seatIds.length) { router.push("/"); return; }
-    fetch(`/api/events/${params.eventId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setEvent(data.event);
-        setSeats(data.event.seats.filter((s: any) => seatIds.includes(s.id)));
-        setLoading(false);
-      });
-  }, [params.eventId]);
-
-  const onSubmit = async (_formData: CheckoutForm) => {
-    setIsBooking(true);
-    setError(null);
-
-    const res = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ eventId: params.eventId, seatIds }),
-    });
-
-    const data = await res.json();
-    setIsBooking(false);
-
-    if (!res.ok) {
-      setError(data.message || "Booking failed. Please try again.");
+    if (!eventId) {
+      setLoading(false);
       return;
     }
 
-    setBookingRef(data.booking.bookingRef);
+    fetch(`/api/events/${eventId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.event) {
+          setEvent(data.event);
+          if (seatIds.length > 0 && Array.isArray(data.event.seats)) {
+            const matched = data.event.seats.filter((s: any) => seatIds.includes(s.id));
+            setSeats(matched);
+          }
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [eventId]);
+
+  const handleConfirmPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventId || seatIds.length === 0) {
+      setError("No seats selected for checkout. Please select and hold your seats first.");
+      return;
+    }
+
+    setIsBooking(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          seatIds,
+          paymentMethod,
+        }),
+      });
+
+      const data = await res.json();
+      setIsBooking(false);
+
+      if (!res.ok) {
+        setError(data.message || "Booking failed. Please try again.");
+        return;
+      }
+
+      setBookingRef(data.booking.bookingRef);
+    } catch (err: any) {
+      setIsBooking(false);
+      setError("Payment processing failed. Please try again.");
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#070b14", color: "#fff" }}>
+        <Loader2 style={{ width: 40, height: 40, color: "#a78bfa" }} className="animate-spin" />
       </div>
     );
   }
 
   if (bookingRef) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-6 animate-fade-in">
-          <div className="w-24 h-24 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#070b14", padding: 24 }}>
+        <div style={{ maxWidth: 480, width: "100%", textAlign: "center", background: "#0f172a", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 24, padding: 40 }}>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(52,211,153,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+            <CheckCircle2 style={{ width: 48, height: 48, color: "#34d399" }} />
           </div>
-          <h1 className="text-3xl font-bold text-white">Booking Confirmed! 🎉</h1>
-          <p className="text-slate-400">
-            Your QR code ticket has been sent to your email.
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: "0 0 12px" }}>Booking Confirmed! 🎉</h1>
+          <p style={{ fontSize: 16, color: "#94a3b8", margin: "0 0 24px" }}>
+            Your QR code ticket has been generated and confirmed.
           </p>
-          <div className="glass rounded-2xl p-4 border border-emerald-500/20">
-            <div className="text-xs text-slate-500 mb-1">Booking Reference</div>
-            <div className="font-mono text-lg font-bold text-violet-400">{bookingRef}</div>
+          <div style={{ background: "#1e293b", borderRadius: 16, padding: 20, marginBottom: 28, border: "1px solid rgba(52,211,153,0.2)" }}>
+            <div style={{ fontSize: 13, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Booking Reference</div>
+            <div style={{ fontFamily: "monospace", fontSize: 24, fontWeight: 800, color: "#a78bfa" }}>{bookingRef}</div>
           </div>
-          <div className="flex gap-3 justify-center">
+          <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
             <button
               onClick={() => router.push(`/bookings/${bookingRef}`)}
-              className="px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all"
+              style={{ padding: "14px 28px", fontSize: 16, fontWeight: 700, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 12, cursor: "pointer" }}
             >
-              View Ticket
+              View Ticket & QR
             </button>
             <button
               onClick={() => router.push("/")}
-              className="px-6 py-3 glass border border-white/10 text-white font-semibold rounded-xl transition-all"
+              style={{ padding: "14px 24px", fontSize: 16, fontWeight: 600, background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, cursor: "pointer" }}
             >
-              Browse More
+              Home Page
             </button>
           </div>
         </div>
@@ -109,124 +131,248 @@ export default function CheckoutPage({ params }: { params: { eventId: string } }
   }
 
   const total = seats.reduce((sum: number, s: any) => sum + s.price, 0);
+  const hasNoSeats = seatIds.length === 0 || seats.length === 0;
 
   return (
-    <div className="min-h-screen max-w-5xl mx-auto px-4 py-8">
+    <div style={{ minHeight: "100vh", background: "#070b14", color: "#fff", padding: "40px 60px 80px" }}>
       <button
-        onClick={() => router.back()}
-        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-8 group"
+        onClick={() => eventId ? router.push(`/events/${eventId}`) : router.push("/")}
+        style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", marginBottom: 32 }}
       >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        Back to seats
+        <ArrowLeft style={{ width: 18, height: 18 }} /> Back to seat map
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Order Summary */}
-        <div className="glass rounded-2xl p-6 border border-white/10 h-fit">
-          <h2 className="text-xl font-bold text-white mb-6">Order Summary</h2>
+      {hasNoSeats && (
+        <div style={{ maxWidth: 1100, margin: "0 auto 32px", padding: "18px 24px", borderRadius: 16, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", display: "flex", alignItems: "center", gap: 14 }}>
+          <AlertCircle style={{ width: 24, height: 24, color: "#f87171", flexShrink: 0 }} />
+          <div style={{ flexGrow: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#f87171" }}>No seats selected for checkout</div>
+            <div style={{ fontSize: 14, color: "#cbd5e1", marginTop: 2 }}>Please return to the event page, select your preferred seats, and click &quot;Hold Seats&quot; before paying.</div>
+          </div>
+          <button
+            onClick={() => eventId ? router.push(`/events/${eventId}`) : router.push("/")}
+            style={{ padding: "10px 18px", fontSize: 14, fontWeight: 700, background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", whiteSpace: "nowrap" }}
+          >
+            Select Seats
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 40, maxWidth: 1100, margin: "0 auto" }}>
+
+        {/* ORDER SUMMARY */}
+        <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 32, height: "fit-content" }}>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: "0 0 24px" }}>Order Summary</h2>
+
           {event && (
-            <div className="mb-6 pb-6 border-b border-white/10">
-              <h3 className="font-semibold text-white">{event.title}</h3>
-              <p className="text-sm text-slate-400 mt-1">{event.venue?.name}</p>
+            <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 6px" }}>{event.title}</h3>
+              <p style={{ fontSize: 14, color: "#94a3b8", margin: 0 }}>📍 {event.venue?.name}</p>
+              <p style={{ fontSize: 14, color: "#94a3b8", marginTop: 4 }}>📅 {new Date(event.date).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })}</p>
             </div>
           )}
-          <div className="space-y-3 mb-6">
-            {seats.map((seat: any) => (
-              <div key={seat.id} className="flex justify-between items-center text-sm">
-                <div>
-                  <span className="text-white font-medium">{seat.label}</span>
-                  <span className="text-slate-400 ml-2 text-xs">{seat.category}</span>
+
+          {seats.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+              {seats.map((seat: any) => (
+                <div key={seat.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15 }}>
+                  <div style={{ flexGrow: 1 }}>
+                    <span style={{ color: "#fff", fontWeight: 700 }}>Seat {seat.label}</span>
+                    <span style={{ color: "#64748b", marginLeft: 8, fontSize: 13, background: "rgba(255,255,255,0.06)", padding: "2px 8px", borderRadius: 6 }}>{seat.category}</span>
+                  </div>
+                  <span style={{ color: "#a78bfa", fontWeight: 700 }}>₹{seat.price}</span>
                 </div>
-                <span className="text-violet-400 font-semibold">₹{seat.price}</span>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 14, color: "#64748b", marginBottom: 24, fontStyle: "italic" }}>
+              No seats held yet.
+            </div>
+          )}
+
+          <div style={{ paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Total Payable</span>
+            <span style={{ fontSize: 28, fontWeight: 900, color: total > 0 ? "#34d399" : "#64748b" }}>₹{total}</span>
           </div>
-          <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-            <span className="font-semibold text-white">Total</span>
-            <span className="text-2xl font-bold text-white">₹{total}</span>
+
+          <div style={{ marginTop: 24, padding: 14, borderRadius: 12, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#6ee7b7" }}>
+            <ShieldCheck style={{ width: 20, height: 20, flexShrink: 0 }} />
+            <span>Seats held for 10 minutes. Instant QR ticket confirmation.</span>
           </div>
         </div>
 
-        {/* Payment Form */}
-        <div className="glass rounded-2xl p-6 border border-white/10">
-          <div className="flex items-center gap-2 mb-6">
-            <CreditCard className="w-5 h-5 text-violet-400" />
-            <h2 className="text-xl font-bold text-white">Payment Details</h2>
+        {/* PAYMENT SECTION */}
+        <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 32 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <Lock style={{ width: 22, height: 22, color: "#a78bfa" }} />
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: 0 }}>Select Payment Method</h2>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {error && (
-              <div className="bg-red-950/40 border border-red-500/30 text-red-300 text-sm px-4 py-3 rounded-lg">
-                {error}
+          {error && (
+            <div style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", padding: "14px 18px", borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
+              {error}
+            </div>
+          )}
+
+          {/* Payment Tabs */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
+            {[
+              { id: "UPI", label: "UPI", icon: QrCode },
+              { id: "CARD", label: "Card", icon: CreditCard },
+              { id: "NETBANKING", label: "Banking", icon: Building2 },
+              { id: "WALLET", label: "Wallet", icon: Wallet },
+            ].map(({ id, label, icon: Icon }) => {
+              const active = paymentMethod === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setPaymentMethod(id as PaymentMethod)}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                    padding: "12px 8px", borderRadius: 12, cursor: "pointer", border: "none",
+                    background: active ? "linear-gradient(135deg, #7c3aed, #4f46e5)" : "rgba(255,255,255,0.05)",
+                    color: active ? "#fff" : "#94a3b8", fontWeight: 700, fontSize: 13,
+                    boxShadow: active ? "0 4px 16px rgba(124,58,237,0.4)" : "none"
+                  }}
+                >
+                  <Icon style={{ width: 20, height: 20 }} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <form onSubmit={handleConfirmPayment} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* UPI Option */}
+            {paymentMethod === "UPI" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>UPI ID (GPay / PhonePe / Paytm)</label>
+                <input
+                  type="text"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="e.g. mobileNumber@upi"
+                  style={{ padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                  required
+                />
+                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                  {["GPay", "PhonePe", "Paytm", "BHIM"].map((app) => (
+                    <span key={app} style={{ fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", color: "#a78bfa" }}>
+                      ✓ {app}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
-            {[
-              { id: "cardName", label: "Name on Card", placeholder: "John Doe", type: "text" },
-              { id: "cardNumber", label: "Card Number", placeholder: "1234567890123456", type: "text", maxLength: 16 },
-            ].map(({ id, label, placeholder, type, maxLength }) => (
-              <div key={id} className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">{label}</label>
-                <input
-                  {...register(id as any)}
-                  id={id}
-                  type={type}
-                  placeholder={placeholder}
-                  maxLength={maxLength}
-                  className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-all"
-                />
-                {errors[id as keyof CheckoutForm] && (
-                  <p className="text-red-400 text-xs">{errors[id as keyof CheckoutForm]?.message}</p>
-                )}
+            {/* Card Option */}
+            {paymentMethod === "CARD" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>Name on Card</label>
+                  <input
+                    type="text"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                    style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>Card Number</label>
+                  <input
+                    type="text"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                    required
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>Expiry</label>
+                    <input
+                      type="text"
+                      value={expiry}
+                      onChange={(e) => setExpiry(e.target.value)}
+                      style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>CVV</label>
+                    <input
+                      type="password"
+                      value={cvv}
+                      onChange={(e) => setCvv(e.target.value)}
+                      style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-            ))}
+            )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">Expiry</label>
-                <input
-                  {...register("expiry")}
-                  id="expiry"
-                  type="text"
-                  placeholder="MM/YY"
-                  maxLength={5}
-                  className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-all"
-                />
-                {errors.expiry && <p className="text-red-400 text-xs">{errors.expiry.message}</p>}
+            {/* NetBanking Option */}
+            {paymentMethod === "NETBANKING" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>Select Bank</label>
+                <select
+                  value={selectedBank}
+                  onChange={(e) => setSelectedBank(e.target.value)}
+                  style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "#1e293b", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                >
+                  <option value="HDFC Bank">HDFC Bank</option>
+                  <option value="State Bank of India">State Bank of India (SBI)</option>
+                  <option value="ICICI Bank">ICICI Bank</option>
+                  <option value="Axis Bank">Axis Bank</option>
+                  <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                </select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-300">CVV</label>
-                <input
-                  {...register("cvv")}
-                  id="cvv"
-                  type="password"
-                  placeholder="•••"
-                  maxLength={4}
-                  className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-all"
-                />
-                {errors.cvv && <p className="text-red-400 text-xs">{errors.cvv.message}</p>}
-              </div>
-            </div>
+            )}
 
-            <div className="pt-2">
-              <button
-                id="confirm-payment"
-                type="submit"
-                disabled={isBooking}
-                className="w-full py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-violet-900/30"
-              >
-                {isBooking ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Confirming Booking...</>
-                ) : (
-                  `Pay ₹${total} & Confirm`
-                )}
-              </button>
-              <p className="text-xs text-slate-500 text-center mt-3">
-                🔒 Secured. Your QR ticket will be emailed instantly.
-              </p>
-            </div>
+            {/* Wallet Option */}
+            {paymentMethod === "WALLET" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>Select Digital Wallet</label>
+                <select
+                  value={selectedWallet}
+                  onChange={(e) => setSelectedWallet(e.target.value)}
+                  style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "#1e293b", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                >
+                  <option value="Paytm Wallet">Paytm Wallet</option>
+                  <option value="Amazon Pay">Amazon Pay</option>
+                  <option value="Mobikwik">Mobikwik</option>
+                  <option value="Freecharge">Freecharge</option>
+                </select>
+              </div>
+            )}
+
+            <button
+              id="confirm-payment-btn"
+              type="submit"
+              disabled={isBooking || hasNoSeats}
+              style={{
+                marginTop: 12, padding: "18px 24px", fontSize: 18, fontWeight: 800,
+                color: "#fff", background: hasNoSeats ? "#334155" : "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                border: "none", borderRadius: 14, cursor: hasNoSeats ? "not-allowed" : "pointer",
+                boxShadow: hasNoSeats ? "none" : "0 6px 24px rgba(124,58,237,0.5)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                opacity: isBooking || hasNoSeats ? 0.6 : 1
+              }}
+            >
+              {isBooking ? (
+                <><Loader2 style={{ width: 22, height: 22 }} className="animate-spin" /> Processing Payment...</>
+              ) : hasNoSeats ? (
+                "Select Seats to Pay"
+              ) : (
+                `Pay ₹${total} & Confirm Booking`
+              )}
+            </button>
           </form>
         </div>
+
       </div>
     </div>
   );
