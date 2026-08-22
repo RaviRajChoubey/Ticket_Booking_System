@@ -10,6 +10,7 @@ const loginSchema = z.object({
 });
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
@@ -17,24 +18,29 @@ export const authConfig: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        try {
+          const parsed = loginSchema.safeParse(credentials);
+          if (!parsed.success) return null;
 
-        const { email, password } = parsed.data;
-        const normalizedEmail = email.toLowerCase().trim();
+          const { email, password } = parsed.data;
+          const normalizedEmail = email.toLowerCase().trim();
 
-        const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-        if (!user) return null;
+          const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+          if (!user) return null;
 
-        const valid = await bcrypt.compare(password, user.hashedPassword);
-        if (!valid) return null;
+          const valid = await bcrypt.compare(password, user.hashedPassword);
+          if (!valid) return null;
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (err) {
+          console.error("[AUTH_AUTHORIZE_ERROR]", err);
+          return null;
+        }
       },
     }),
   ],
@@ -56,7 +62,6 @@ export const authConfig: NextAuthConfig = {
   },
   pages: {
     signIn: "/auth/login",
-    error: "/auth/error",
   },
   session: { strategy: "jwt" },
 };

@@ -47,14 +47,18 @@ export default function RegisterPage() {
     }
 
     // Auto sign-in after registration
-    await signIn("credentials", {
+    const signInRes = await signIn("credentials", {
       email: data.email,
       password: data.password,
       redirect: false,
     });
 
-    router.push("/");
-    router.refresh();
+    if (signInRes?.error) {
+      router.push("/auth/login?registered=true");
+    } else {
+      router.push("/");
+      router.refresh();
+    }
   };
 
   return (
