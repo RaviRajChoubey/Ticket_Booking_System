@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
       if (qrBuffer) {
         attachments.push({
           filename: `ticket-qr-${booking.bookingRef.slice(-6)}.png`,
-          content: qrBuffer.toString("base64"),
+          content: qrBuffer,
         });
       }
 
