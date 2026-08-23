@@ -105,11 +105,95 @@ async function main() {
     return d;
   };
 
-  await createEvent({ title: "Inception (Christopher Nolan)", type: "MOVIE", date: futureDate(3) }, venue1);
-  await createEvent({ title: "Interstellar Remastered 4K", type: "MOVIE", date: futureDate(5, 20) }, venue1);
-  await createEvent({ title: "Coldplay Music of the Spheres Tour", type: "CONCERT", date: futureDate(7) }, venue2);
-  await createEvent({ title: "AR Rahman Live in Concert", type: "CONCERT", date: futureDate(14, 19) }, venue2);
-  await createEvent({ title: "Dune Part 3 Premiere", type: "MOVIE", date: futureDate(10, 21) }, venue1);
+  // Movies
+  await createEvent({
+    title: "Inception (Christopher Nolan)",
+    description: "Cobb steals information from targets by entering their dreams. Experience Nolan's mind-bending masterpiece in IMAX.",
+    type: "MOVIE",
+    imageUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(3)
+  }, venue1);
+
+  await createEvent({
+    title: "Interstellar Remastered 4K",
+    description: "When Earth becomes uninhabitable, a team of ex-NASA pilots travel through a wormhole to find a new planet for humanity.",
+    type: "MOVIE",
+    imageUrl: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(5, 20)
+  }, venue1);
+
+  await createEvent({
+    title: "Oppenheimer (IMAX 70mm)",
+    description: "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.",
+    type: "MOVIE",
+    imageUrl: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(8, 19)
+  }, venue1);
+
+  await createEvent({
+    title: "Avatar: Fire and Ash (3D Laser IMAX)",
+    description: "Return to Pandora in James Cameron's groundbreaking visual spectacle featuring high frame rate 3D laser projection.",
+    type: "MOVIE",
+    imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(12, 21)
+  }, venue1);
+
+  await createEvent({
+    title: "The Dark Knight Rises (Nolan Special)",
+    description: "Eight years after the Joker's reign of anarchy, Batman is forced from his exile to save Gotham City from Bane.",
+    type: "MOVIE",
+    imageUrl: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(15, 18)
+  }, venue1);
+
+  await createEvent({
+    title: "Dune Part 3 Premiere",
+    description: "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.",
+    type: "MOVIE",
+    imageUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(18, 20)
+  }, venue1);
+
+  // Concerts
+  await createEvent({
+    title: "Coldplay Music of the Spheres Tour",
+    description: "Experience the world's most spectacular stadium concert with wristband lights, pyrotechnics, and iconic hits.",
+    type: "CONCERT",
+    imageUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(7, 19)
+  }, venue2);
+
+  await createEvent({
+    title: "AR Rahman Live in Concert",
+    description: "An unforgettable evening with the Oscar-winning maestro performing legendary melodies and symphonic arrangements live.",
+    type: "CONCERT",
+    imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(14, 19)
+  }, venue2);
+
+  await createEvent({
+    title: "Ed Sheeran Mathematics Tour Live",
+    description: "The global pop superstar brings his 360-degree round stage setup for a massive night of acoustic mastery and loop-pedal hits.",
+    type: "CONCERT",
+    imageUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(21, 19)
+  }, venue2);
+
+  await createEvent({
+    title: "Arijit Singh Soulful Nights Live",
+    description: "India's favorite voice performs a 3-hour non-stop grand concert with a 50-piece live orchestra.",
+    type: "CONCERT",
+    imageUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(25, 18)
+  }, venue2);
+
+  await createEvent({
+    title: "Diljit Dosanjh Dil-Luminati Tour",
+    description: "High-energy Punjabi beats, sensational vocals, and electrifying stage performance from the global sensation Diljit Dosanjh.",
+    type: "CONCERT",
+    imageUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=800&q=80",
+    date: futureDate(30, 20)
+  }, venue2);
 
   console.log("\n✅ Seeding complete!");
   console.log("Demo accounts (password: demo1234):");
