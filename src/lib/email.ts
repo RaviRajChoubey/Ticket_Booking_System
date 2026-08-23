@@ -39,8 +39,13 @@ export async function sendTicketEmail(options: SendEmailOptions) {
         content: typeof a.content === "string" ? Buffer.from(a.content, "base64") : a.content,
       }));
 
+      // Ensure 'from' is a valid email address (b67781001@smtp-brevo.com is an SMTP username, not a sender email)
+      const senderEmail = (smtpUser.includes("@") && !smtpUser.includes("@smtp-brevo.com"))
+        ? smtpUser
+        : (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev");
+
       const info = await transporter.sendMail({
-        from: `TicketHub <${smtpUser}>`,
+        from: `TicketHub <${senderEmail}>`,
         to,
         subject,
         html,
