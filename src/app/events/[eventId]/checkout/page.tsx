@@ -22,12 +22,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ eventId: st
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
 
-  // Form states
-  const [upiId, setUpiId] = useState("user@upi");
-  const [cardName, setCardName] = useState("Ravi Raj Choubey");
-  const [cardNumber, setCardNumber] = useState("4532 8901 2345 6789");
-  const [expiry, setExpiry] = useState("12/28");
-  const [cvv, setCvv] = useState("888");
+  // Form states — start blank so user can fill without deleting dummy text
+  const [upiId, setUpiId] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
   const [selectedBank, setSelectedBank] = useState("HDFC Bank");
   const [selectedWallet, setSelectedWallet] = useState("Paytm Wallet");
 
@@ -90,37 +90,37 @@ export default function CheckoutPage({ params }: { params: Promise<{ eventId: st
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#070b14", color: "#fff" }}>
-        <Loader2 style={{ width: 40, height: 40, color: "#a78bfa" }} className="animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[hsl(222,47%,6%)] text-white">
+        <Loader2 className="w-10 h-10 text-violet-400 animate-spin" />
       </div>
     );
   }
 
   if (bookingRef) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#070b14", padding: 24 }}>
-        <div style={{ maxWidth: 480, width: "100%", textAlign: "center", background: "#0f172a", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 24, padding: 40 }}>
-          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(52,211,153,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
-            <CheckCircle2 style={{ width: 48, height: 48, color: "#34d399" }} />
+      <div className="min-h-screen flex items-center justify-center bg-[hsl(222,47%,6%)] px-4 py-20">
+        <div className="max-w-md w-full text-center glass rounded-3xl p-8 sm:p-10 border border-violet-500/30">
+          <div className="w-20 h-20 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
           </div>
-          <h1 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: "0 0 12px" }}>Booking Confirmed! 🎉</h1>
-          <p style={{ fontSize: 16, color: "#94a3b8", margin: "0 0 24px" }}>
-            Your QR code ticket has been generated and confirmed.
+          <h1 className="text-3xl font-black text-white mb-3">Booking Confirmed! 🎉</h1>
+          <p className="text-sm text-slate-400 mb-6">
+            Your QR code ticket has been generated and emailed to you.
           </p>
-          <div style={{ background: "#1e293b", borderRadius: 16, padding: 20, marginBottom: 28, border: "1px solid rgba(52,211,153,0.2)" }}>
-            <div style={{ fontSize: 13, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Booking Reference</div>
-            <div style={{ fontFamily: "monospace", fontSize: 24, fontWeight: 800, color: "#a78bfa" }}>{bookingRef}</div>
+          <div className="bg-slate-900/80 rounded-2xl p-5 mb-7 border border-emerald-500/20">
+            <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Booking Reference</div>
+            <div className="font-mono text-2xl font-black text-violet-400">{bookingRef}</div>
           </div>
-          <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => router.push(`/bookings/${bookingRef}`)}
-              style={{ padding: "14px 28px", fontSize: 16, fontWeight: 700, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 12, cursor: "pointer" }}
+              className="px-6 py-3.5 text-sm font-bold bg-violet-600 hover:bg-violet-500 text-white rounded-xl transition-all shadow-lg shadow-violet-900/40"
             >
               View Ticket & QR
             </button>
             <button
               onClick={() => router.push("/")}
-              style={{ padding: "14px 24px", fontSize: 16, fontWeight: 600, background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, cursor: "pointer" }}
+              className="px-6 py-3.5 text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/15 rounded-xl transition-all"
             >
               Home Page
             </button>
@@ -134,245 +134,260 @@ export default function CheckoutPage({ params }: { params: Promise<{ eventId: st
   const hasNoSeats = seatIds.length === 0 || seats.length === 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#070b14", color: "#fff", padding: "40px 60px 80px" }}>
-      <button
-        onClick={() => eventId ? router.push(`/events/${eventId}`) : router.push("/")}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "#94a3b8", background: "none", border: "none", cursor: "pointer", marginBottom: 32 }}
-      >
-        <ArrowLeft style={{ width: 18, height: 18 }} /> Back to seat map
-      </button>
+    <div className="min-h-screen bg-[hsl(222,47%,6%)] text-white">
+      {/* Container with top padding to prevent overlap with fixed top navbar */}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 md:pt-32 pb-16">
+        
+        {/* Back Button - Clear margin & spacing below navbar */}
+        <button
+          onClick={() => eventId ? router.push(`/events/${eventId}`) : router.push("/")}
+          className="inline-flex items-center gap-2 text-sm sm:text-base font-semibold text-slate-400 hover:text-white transition-colors mb-6 group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span>Back to seat map</span>
+        </button>
 
-      {hasNoSeats && (
-        <div style={{ maxWidth: 1100, margin: "0 auto 32px", padding: "18px 24px", borderRadius: 16, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", display: "flex", alignItems: "center", gap: 14 }}>
-          <AlertCircle style={{ width: 24, height: 24, color: "#f87171", flexShrink: 0 }} />
-          <div style={{ flexGrow: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#f87171" }}>No seats selected for checkout</div>
-            <div style={{ fontSize: 14, color: "#cbd5e1", marginTop: 2 }}>Please return to the event page, select your preferred seats, and click &quot;Hold Seats&quot; before paying.</div>
-          </div>
-          <button
-            onClick={() => eventId ? router.push(`/events/${eventId}`) : router.push("/")}
-            style={{ padding: "10px 18px", fontSize: 14, fontWeight: 700, background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", whiteSpace: "nowrap" }}
-          >
-            Select Seats
-          </button>
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 40, maxWidth: 1100, margin: "0 auto" }}>
-
-        {/* ORDER SUMMARY */}
-        <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 32, height: "fit-content" }}>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: "0 0 24px" }}>Order Summary</h2>
-
-          {event && (
-            <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 6px" }}>{event.title}</h3>
-              <p style={{ fontSize: 14, color: "#94a3b8", margin: 0 }}>📍 {event.venue?.name}</p>
-              <p style={{ fontSize: 14, color: "#94a3b8", marginTop: 4 }}>📅 {new Date(event.date).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })}</p>
+        {hasNoSeats && (
+          <div className="mb-8 p-5 sm:p-6 rounded-2xl bg-red-950/30 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <AlertCircle className="w-6 h-6 text-red-400 shrink-0" />
+            <div className="flex-1">
+              <div className="text-base font-bold text-red-400">No seats selected for checkout</div>
+              <div className="text-xs sm:text-sm text-slate-300 mt-1">Please return to the event page, select your preferred seats, and click &quot;Hold Seats&quot; before paying.</div>
             </div>
-          )}
-
-          {seats.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-              {seats.map((seat: any) => (
-                <div key={seat.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15 }}>
-                  <div style={{ flexGrow: 1 }}>
-                    <span style={{ color: "#fff", fontWeight: 700 }}>Seat {seat.label}</span>
-                    <span style={{ color: "#64748b", marginLeft: 8, fontSize: 13, background: "rgba(255,255,255,0.06)", padding: "2px 8px", borderRadius: 6 }}>{seat.category}</span>
-                  </div>
-                  <span style={{ color: "#a78bfa", fontWeight: 700 }}>₹{seat.price}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ fontSize: 14, color: "#64748b", marginBottom: 24, fontStyle: "italic" }}>
-              No seats held yet.
-            </div>
-          )}
-
-          <div style={{ paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Total Payable</span>
-            <span style={{ fontSize: 28, fontWeight: 900, color: total > 0 ? "#34d399" : "#64748b" }}>₹{total}</span>
+            <button
+              onClick={() => eventId ? router.push(`/events/${eventId}`) : router.push("/")}
+              className="px-4 py-2.5 text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all shrink-0"
+            >
+              Select Seats
+            </button>
           </div>
+        )}
 
-          <div style={{ marginTop: 24, padding: 14, borderRadius: 12, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#6ee7b7" }}>
-            <ShieldCheck style={{ width: 20, height: 20, flexShrink: 0 }} />
-            <span>Seats held for 10 minutes. Instant QR ticket confirmation.</span>
-          </div>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
-        {/* PAYMENT SECTION */}
-        <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 32 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-            <Lock style={{ width: 22, height: 22, color: "#a78bfa" }} />
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: 0 }}>Select Payment Method</h2>
-          </div>
+          {/* ORDER SUMMARY */}
+          <div className="lg:col-span-5 glass rounded-2xl p-6 sm:p-8 border border-white/10">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-6">Order Summary</h2>
 
-          {error && (
-            <div style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", padding: "14px 18px", borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
-              {error}
-            </div>
-          )}
-
-          {/* Payment Tabs */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
-            {[
-              { id: "UPI", label: "UPI", icon: QrCode },
-              { id: "CARD", label: "Card", icon: CreditCard },
-              { id: "NETBANKING", label: "Banking", icon: Building2 },
-              { id: "WALLET", label: "Wallet", icon: Wallet },
-            ].map(({ id, label, icon: Icon }) => {
-              const active = paymentMethod === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setPaymentMethod(id as PaymentMethod)}
-                  style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                    padding: "12px 8px", borderRadius: 12, cursor: "pointer", border: "none",
-                    background: active ? "linear-gradient(135deg, #7c3aed, #4f46e5)" : "rgba(255,255,255,0.05)",
-                    color: active ? "#fff" : "#94a3b8", fontWeight: 700, fontSize: 13,
-                    boxShadow: active ? "0 4px 16px rgba(124,58,237,0.4)" : "none"
-                  }}
-                >
-                  <Icon style={{ width: 20, height: 20 }} />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
-          <form onSubmit={handleConfirmPayment} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* UPI Option */}
-            {paymentMethod === "UPI" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>UPI ID (GPay / PhonePe / Paytm)</label>
-                <input
-                  type="text"
-                  value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
-                  placeholder="e.g. mobileNumber@upi"
-                  style={{ padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
-                  required
-                />
-                <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                  {["GPay", "PhonePe", "Paytm", "BHIM"].map((app) => (
-                    <span key={app} style={{ fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, background: "rgba(255,255,255,0.06)", color: "#a78bfa" }}>
-                      ✓ {app}
-                    </span>
-                  ))}
-                </div>
+            {event && (
+              <div className="pb-5 mb-5 border-b border-white/10">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-1.5">{event.title}</h3>
+                <p className="text-xs sm:text-sm text-slate-400 flex items-center gap-1">
+                  <span>📍</span> {event.venue?.name}
+                </p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 flex items-center gap-1">
+                  <span>📅</span> {new Date(event.date).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })}
+                </p>
               </div>
             )}
 
-            {/* Card Option */}
-            {paymentMethod === "CARD" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div>
-                  <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>Name on Card</label>
+            {seats.length > 0 ? (
+              <div className="space-y-3 mb-6">
+                {seats.map((seat: any) => (
+                  <div key={seat.id} className="flex justify-between items-center text-sm sm:text-base">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white">Seat {seat.label}</span>
+                      <span className="text-xs text-slate-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">{seat.category}</span>
+                    </div>
+                    <span className="font-bold text-violet-400">₹{seat.price}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500 italic mb-6">
+                No seats held yet.
+              </div>
+            )}
+
+            <div className="pt-5 border-t border-white/10 flex justify-between items-center">
+              <span className="text-base sm:text-lg font-bold text-white">Total Payable</span>
+              <span className={`text-2xl sm:text-3xl font-black ${total > 0 ? "text-emerald-400" : "text-slate-500"}`}>₹{total}</span>
+            </div>
+
+            <div className="mt-6 p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/20 flex items-center gap-3 text-xs sm:text-sm text-emerald-300">
+              <ShieldCheck className="w-5 h-5 shrink-0 text-emerald-400" />
+              <span>Seats held for 10 minutes. Instant QR ticket confirmation.</span>
+            </div>
+          </div>
+
+          {/* PAYMENT SECTION */}
+          <div className="lg:col-span-7 glass rounded-2xl p-6 sm:p-8 border border-white/10">
+            <div className="flex items-center gap-2.5 mb-6">
+              <Lock className="w-5 h-5 text-violet-400" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white">Select Payment Method</h2>
+            </div>
+
+            {error && (
+              <div className="bg-red-950/40 border border-red-500/30 text-red-300 p-4 rounded-xl mb-6 text-xs sm:text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Payment Tabs */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6">
+              {[
+                { id: "UPI", label: "UPI", icon: QrCode },
+                { id: "CARD", label: "Card", icon: CreditCard },
+                { id: "NETBANKING", label: "Banking", icon: Building2 },
+                { id: "WALLET", label: "Wallet", icon: Wallet },
+              ].map(({ id, label, icon: Icon }) => {
+                const active = paymentMethod === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setPaymentMethod(id as PaymentMethod)}
+                    className={`
+                      flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all text-xs sm:text-sm font-bold
+                      ${active
+                        ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-900/40 scale-[1.02]"
+                        : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5"
+                      }
+                    `}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <form onSubmit={handleConfirmPayment} className="space-y-5">
+              {/* UPI Option */}
+              {paymentMethod === "UPI" && (
+                <div className="space-y-3">
+                  <label className="text-xs sm:text-sm font-semibold text-slate-300">UPI ID (GPay / PhonePe / Paytm)</label>
                   <input
                     type="text"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="e.g. mobileNumber@upi"
+                    className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 text-sm"
                     required
                   />
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {["GPay", "PhonePe", "Paytm", "BHIM"].map((app) => (
+                      <span key={app} className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-violet-300">
+                        ✓ {app}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>Card Number</label>
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
-                    required
-                  />
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              )}
+
+              {/* Card Option */}
+              {paymentMethod === "CARD" && (
+                <div className="space-y-4">
                   <div>
-                    <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>Expiry</label>
+                    <label className="text-xs sm:text-sm font-semibold text-slate-300 block mb-1.5">Name on Card</label>
                     <input
                       type="text"
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                      value={cardName}
+                      onChange={(e) => setCardName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 text-sm"
                       required
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1", display: "block", marginBottom: 6 }}>CVV</label>
+                    <label className="text-xs sm:text-sm font-semibold text-slate-300 block mb-1.5">Card Number</label>
                     <input
-                      type="password"
-                      value={cvv}
-                      onChange={(e) => setCvv(e.target.value)}
-                      style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
+                      type="text"
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      placeholder="4532 8901 2345 6789"
+                      className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 text-sm"
                       required
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs sm:text-sm font-semibold text-slate-300 block mb-1.5">Expiry</label>
+                      <input
+                        type="text"
+                        value={expiry}
+                        onChange={(e) => setExpiry(e.target.value)}
+                        placeholder="MM/YY"
+                        className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 text-sm"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs sm:text-sm font-semibold text-slate-300 block mb-1.5">CVV</label>
+                      <input
+                        type="password"
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value)}
+                        placeholder="123"
+                        maxLength={4}
+                        className="w-full px-4 py-3 bg-slate-900/80 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* NetBanking Option */}
-            {paymentMethod === "NETBANKING" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>Select Bank</label>
-                <select
-                  value={selectedBank}
-                  onChange={(e) => setSelectedBank(e.target.value)}
-                  style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "#1e293b", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
-                >
-                  <option value="HDFC Bank">HDFC Bank</option>
-                  <option value="State Bank of India">State Bank of India (SBI)</option>
-                  <option value="ICICI Bank">ICICI Bank</option>
-                  <option value="Axis Bank">Axis Bank</option>
-                  <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-                </select>
-              </div>
-            )}
-
-            {/* Wallet Option */}
-            {paymentMethod === "WALLET" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <label style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>Select Digital Wallet</label>
-                <select
-                  value={selectedWallet}
-                  onChange={(e) => setSelectedWallet(e.target.value)}
-                  style={{ width: "100%", padding: "14px 18px", fontSize: 15, background: "#1e293b", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff", outline: "none" }}
-                >
-                  <option value="Paytm Wallet">Paytm Wallet</option>
-                  <option value="Amazon Pay">Amazon Pay</option>
-                  <option value="Mobikwik">Mobikwik</option>
-                  <option value="Freecharge">Freecharge</option>
-                </select>
-              </div>
-            )}
-
-            <button
-              id="confirm-payment-btn"
-              type="submit"
-              disabled={isBooking || hasNoSeats}
-              style={{
-                marginTop: 12, padding: "18px 24px", fontSize: 18, fontWeight: 800,
-                color: "#fff", background: hasNoSeats ? "#334155" : "linear-gradient(135deg, #7c3aed, #4f46e5)",
-                border: "none", borderRadius: 14, cursor: hasNoSeats ? "not-allowed" : "pointer",
-                boxShadow: hasNoSeats ? "none" : "0 6px 24px rgba(124,58,237,0.5)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                opacity: isBooking || hasNoSeats ? 0.6 : 1
-              }}
-            >
-              {isBooking ? (
-                <><Loader2 style={{ width: 22, height: 22 }} className="animate-spin" /> Processing Payment...</>
-              ) : hasNoSeats ? (
-                "Select Seats to Pay"
-              ) : (
-                `Pay ₹${total} & Confirm Booking`
               )}
-            </button>
-          </form>
-        </div>
 
+              {/* NetBanking Option */}
+              {paymentMethod === "NETBANKING" && (
+                <div className="space-y-3">
+                  <label className="text-xs sm:text-sm font-semibold text-slate-300">Select Bank</label>
+                  <select
+                    value={selectedBank}
+                    onChange={(e) => setSelectedBank(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 text-sm"
+                  >
+                    <option value="HDFC Bank">HDFC Bank</option>
+                    <option value="State Bank of India">State Bank of India (SBI)</option>
+                    <option value="ICICI Bank">ICICI Bank</option>
+                    <option value="Axis Bank">Axis Bank</option>
+                    <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Wallet Option */}
+              {paymentMethod === "WALLET" && (
+                <div className="space-y-3">
+                  <label className="text-xs sm:text-sm font-semibold text-slate-300">Select Digital Wallet</label>
+                  <select
+                    value={selectedWallet}
+                    onChange={(e) => setSelectedWallet(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-900 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500 text-sm"
+                  >
+                    <option value="Paytm Wallet">Paytm Wallet</option>
+                    <option value="Amazon Pay">Amazon Pay</option>
+                    <option value="Mobikwik">Mobikwik</option>
+                    <option value="Freecharge">Freecharge</option>
+                  </select>
+                </div>
+              )}
+
+              <button
+                id="confirm-payment-btn"
+                type="submit"
+                disabled={isBooking || hasNoSeats}
+                className={`
+                  w-full mt-4 py-4 px-6 rounded-xl font-extrabold text-base sm:text-lg transition-all flex items-center justify-center gap-2.5
+                  ${hasNoSeats
+                    ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5"
+                    : "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-violet-900/50 hover:scale-[1.01]"
+                  }
+                  ${isBooking ? "opacity-60 cursor-wait" : ""}
+                `}
+              >
+                {isBooking ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Processing Payment...</>
+                ) : hasNoSeats ? (
+                  "Select Seats to Pay"
+                ) : (
+                  `Pay ₹${total} & Confirm Booking`
+                )}
+              </button>
+            </form>
+          </div>
+
+        </div>
       </div>
     </div>
   );

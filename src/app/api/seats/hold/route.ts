@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         where: { id: { in: seatIds } },
         data: { status: "HELD", holdByUserId: userId, holdExpiresAt: holdExpiry },
       });
-    });
+    }, { maxWait: 10000, timeout: 15000 });
 
     return apiSuccess({
       message: "Seats held successfully",

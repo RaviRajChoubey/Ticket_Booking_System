@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       });
 
       return newBooking;
-    });
+    }, { maxWait: 10000, timeout: 15000 });
 
     // Release Redis hold keys (outside transaction) if Redis is available
     if (redisOk) {
