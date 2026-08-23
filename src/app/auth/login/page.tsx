@@ -20,9 +20,10 @@ function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRegistered = searchParams.get("registered") === "true";
-
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const urlError = searchParams.get("error");
+  const activeError = error || (urlError ? "Invalid email or password. Please check your credentials." : null);
 
   const {
     register,
@@ -61,16 +62,16 @@ function LoginFormContent() {
       {/* Card */}
       <div className="glass rounded-2xl p-8 border border-white/10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {isRegistered && !error && (
+          {isRegistered && !activeError && (
             <div className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>Account created successfully! Please sign in.</span>
             </div>
           )}
 
-          {error && (
+          {activeError && (
             <div className="bg-red-950/40 border border-red-500/30 text-red-300 text-sm px-4 py-3 rounded-lg">
-              {error}
+              {activeError}
             </div>
           )}
 
