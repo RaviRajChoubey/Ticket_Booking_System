@@ -10,6 +10,7 @@ const loginSchema = z.object({
 });
 
 export const authConfig: NextAuthConfig = {
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "cd4fb3995b2ac2974e31ec94d9cc00e0bd67ce48df57a90f9ea29475752efac5",
   trustHost: true,
   providers: [
     Credentials({
