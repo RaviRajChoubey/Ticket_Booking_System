@@ -12,5 +12,5 @@ export function getResend(): Resend {
   return _resend;
 }
 
-export const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "tickets@tickethub.app";
+export const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 export const APP_NAME = "TicketHub";
