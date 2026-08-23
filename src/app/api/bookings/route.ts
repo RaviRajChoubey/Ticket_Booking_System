@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateQRCode, generateQRBuffer } from "@/lib/qr";
-import { getResend, FROM_EMAIL, APP_NAME } from "@/lib/resend";
+import { APP_NAME } from "@/lib/resend";
+import { sendTicketEmail } from "@/lib/email";
 import { z } from "zod";
 import { apiError, apiSuccess, unauthorized, conflict } from "@/lib/api-response";
 
@@ -155,8 +156,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      const resendResult = await getResend().emails.send({
-        from: FROM_EMAIL,
+      await sendTicketEmail({
         to: booking.user.email,
         subject: `🎟️ Booking Confirmed — ${booking.event.title}`,
         attachments,
@@ -226,7 +226,6 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       });
-      console.log("[EMAIL_SENT_SUCCESS]", resendResult);
     } catch (emailErr: any) {
       console.error("[EMAIL_SEND_ERROR]", emailErr?.message || emailErr);
     }
