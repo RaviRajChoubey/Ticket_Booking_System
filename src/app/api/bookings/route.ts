@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      await getResend().emails.send({
+      const resendResult = await getResend().emails.send({
         from: FROM_EMAIL,
         to: booking.user.email,
         subject: `🎟️ Booking Confirmed — ${booking.event.title}`,
@@ -225,8 +225,9 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       });
-    } catch (emailErr) {
-      console.warn("[EMAIL_SEND_SKIP]", emailErr);
+      console.log("[EMAIL_SENT_SUCCESS]", resendResult);
+    } catch (emailErr: any) {
+      console.error("[EMAIL_SEND_ERROR]", emailErr?.message || emailErr);
     }
 
     return apiSuccess({
