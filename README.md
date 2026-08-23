@@ -8,7 +8,7 @@
 
 ## 🚀 Live Demo
 
-**Hosted URL:** `https://ticket-booking-app.vercel.app`
+**Hosted URL:** `https://ticket-booking-system-2xqf.vercel.app`
 
 **Demo Accounts (password: `demo1234`):**
 

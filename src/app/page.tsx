@@ -5,6 +5,9 @@ import { EventCard } from "@/components/events/event-card";
 import { EventFilters } from "@/components/events/event-filters";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getEvents(searchParams: { type?: string; search?: string }) {
   try {
     const where: any = { status: "PUBLISHED" };

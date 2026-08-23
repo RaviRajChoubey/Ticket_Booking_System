@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         timeStyle: "short",
       });
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ticket-booking-system-opal.vercel.app");
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ticket-booking-system-2xqf.vercel.app");
       const bookingUrl = `${baseUrl}/bookings/${booking.bookingRef}`;
       // Reliable HTTPS QR Code image URL for Gmail proxy rendering
       const emailQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(bookingUrl)}`;
