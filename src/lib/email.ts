@@ -11,7 +11,7 @@ export interface SendEmailOptions {
 export async function sendTicketEmail(options: SendEmailOptions) {
   const { to, subject, html, attachments } = options;
 
-  // 1. Try Nodemailer SMTP if configured (Gmail App Password, Brevo, or custom SMTP)
+  // 1. Try Nodemailer SMTP if configured (Gmail App Password, Brevo, SendGrid, or custom SMTP)
   const rawSmtpUser = process.env.SMTP_USER || process.env.GMAIL_USER || "";
   const rawSmtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || "";
 
@@ -20,10 +20,14 @@ export async function sendTicketEmail(options: SendEmailOptions) {
 
   if (smtpUser && smtpPass) {
     try {
+      const port = Number(process.env.SMTP_PORT) || 465;
+      const host = process.env.SMTP_HOST || "smtp.gmail.com";
+      const secure = port === 465;
+
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: Number(process.env.SMTP_PORT) || 465,
-        secure: true,
+        host,
+        port,
+        secure,
         auth: {
           user: smtpUser,
           pass: smtpPass,
