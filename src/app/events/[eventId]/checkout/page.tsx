@@ -105,7 +105,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ eventId: st
           </div>
           <h1 className="text-3xl font-black text-white mb-3">Booking Confirmed! 🎉</h1>
           <p className="text-sm text-slate-400 mb-6">
-            Your QR code ticket has been generated and emailed to you.
+            Your QR code ticket has been generated and confirmed.
           </p>
           <div className="bg-slate-900/80 rounded-2xl p-5 mb-7 border border-emerald-500/20">
             <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Booking Reference</div>

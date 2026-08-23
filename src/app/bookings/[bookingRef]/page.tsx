@@ -114,7 +114,7 @@ export default async function BookingDetailPage({
                 />
               </div>
               <p className="text-xs text-slate-500 max-w-xs">
-                Show this QR code at the venue for entry. Also sent to your email.
+                Show this QR code at the venue for entry. You can view or download your ticket anytime here.
               </p>
               <a
                 href={booking.qrCodeData}
