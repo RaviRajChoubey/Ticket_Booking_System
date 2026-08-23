@@ -44,8 +44,7 @@ function LoginFormContent() {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   };
 
   return (

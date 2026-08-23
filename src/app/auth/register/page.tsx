@@ -54,10 +54,9 @@ export default function RegisterPage() {
     });
 
     if (signInRes?.error) {
-      router.push("/auth/login?registered=true");
+      window.location.href = "/auth/login?registered=true";
     } else {
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     }
   };
 
