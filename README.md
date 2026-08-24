@@ -1,36 +1,36 @@
 # 🎟️ TicketHub — Enterprise Ticket Booking System
 
 > **Submission for:** Unthinkable Solutions  
-> **Candidate:** [Your Name]  
-> **Stack:** Next.js 14 · PostgreSQL · Redis · NextAuth · Resend · Vercel
+> **Candidate:** Ravi Raj Choubey  
+> **Stack:** Next.js 15 · PostgreSQL (Supabase) · Redis (Upstash) · NextAuth v5 · Brevo / Nodemailer / Resend · Tailwind CSS · Vercel
 
 ---
 
 ## 🚀 Live Demo
 
-**Hosted URL:** `https://ticket-booking-system-2xqf.vercel.app`
+**Hosted Production URL:** `https://ticket-booking-system-2xqf.vercel.app`
 
 **Demo Accounts (password: `demo1234`):**
 
-| Role | Email |
-|---|---|
-| Admin | admin@demo.com |
-| Organiser | org@demo.com |
-| Customer | user@demo.com |
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@demo.com` | `demo1234` |
+| Organiser | `org@demo.com` | `demo1234` |
+| Customer | `user@demo.com` | `demo1234` |
 
 ---
 
 ## 📋 Features
 
-- ✅ **Role-based Auth** — Customer / Organiser / Admin with JWT
-- ✅ **Visual Seat Map** — Real-time color-coded seat grid
-- ✅ **Seat Hold TTL** — 10-minute hold via Redis atomic `SET NX EX`
-- ✅ **Auto-release** — Cron job releases expired holds every minute
-- ✅ **Concurrency-safe Booking** — Redis NX + Postgres `SELECT FOR UPDATE`
-- ✅ **QR Code Ticket** — Generated on booking, emailed via Resend
-- ✅ **Waitlist** — Join queue per category; auto-offer on cancellation
-- ✅ **Time-limited Offers** — 15-min email link for waitlisted users
-- ✅ **Booking Cancellation** — Triggers waitlist cascade
+- ✅ **Role-based Auth** — Customer / Organiser / Admin with NextAuth v5 JWT strategy
+- ✅ **Visual Seat Map** — Real-time color-coded seat grid per venue & show
+- ✅ **Seat Hold TTL** — 10-minute seat hold via Upstash Redis atomic `SET NX EX` + PostgreSQL row lock
+- ✅ **Auto-release** — Cron job releases abandoned/expired holds automatically
+- ✅ **Concurrency Protection** — Dual-layer safety: Redis NX + Postgres `SELECT FOR UPDATE` transaction row locks
+- ✅ **Universal Email Engine** — Direct QR code ticket delivery via Nodemailer SMTP (Brevo / Gmail) & Resend
+- ✅ **Waitlist System** — FIFO queue per seat category; auto-offers seat on booking cancellation
+- ✅ **Time-limited Offers** — 15-minute time-limited claim token sent via email for waitlisted users
+- ✅ **Booking Management** — View QR tickets, download ticket images, and process cancellations
 
 ---
 
@@ -38,14 +38,15 @@
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| Database | PostgreSQL (Supabase) |
-| ORM | Prisma |
+| Framework | Next.js 15 (App Router) |
+| Database | PostgreSQL (Supabase Cloud) |
+| ORM | Prisma ORM 5.22 |
 | Auth | NextAuth.js v5 (JWT) |
 | Seat Hold TTL | Upstash Redis |
-| Email + QR | Resend + `qrcode` npm |
+| Email Engine | Nodemailer (Brevo SMTP / Gmail App Password) + Resend API |
+| QR Code | `qrcode` npm (base64 + inline CID + HTTPS proxy rendering) |
 | Deployment | Vercel |
-| Styling | Tailwind CSS |
+| Styling | Tailwind CSS v4 |
 
 ---
 
@@ -54,7 +55,7 @@
 ### 1. Clone & Install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/RaviRajChoubey/Ticket_Booking_System.git
 cd ticket-booking-app
 npm install
 ```
@@ -68,36 +69,40 @@ cp .env.example .env.local
 Fill in `.env.local`:
 
 ```env
-# PostgreSQL (get from supabase.com → Project Settings → Database)
-DATABASE_URL="postgresql://postgres:[password]@[host]:5432/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres:[password]@[host]:5432/postgres"
+# PostgreSQL (Supabase Transaction Pooler on port 6543)
+DATABASE_URL="postgresql://postgres.[ref]:[pass]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[ref]:[pass]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
 
-# NextAuth (generate with: openssl rand -base64 32)
-NEXTAUTH_SECRET="your-random-secret"
+# NextAuth v5
+NEXTAUTH_SECRET="cd4fb3995b2ac2974e31ec94d9cc00e0bd67ce48df57a90f9ea29475752efac5"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Upstash Redis (get from console.upstash.com)
+# Upstash Redis (Seat Hold TTL)
 UPSTASH_REDIS_REST_URL="https://..."
 UPSTASH_REDIS_REST_TOKEN="..."
 
-# Resend (get from resend.com/api-keys)
+# Brevo SMTP (Universal Ticket Email Delivery to ANY Address)
+SMTP_HOST="smtp-relay.brevo.com"
+SMTP_PORT="587"
+SMTP_USER="your_brevo_smtp_login"
+SMTP_PASS="xsmtpsib-your_brevo_smtp_key"
+
+# Resend API (Optional secondary email provider)
 RESEND_API_KEY="re_..."
+RESEND_FROM_EMAIL="onboarding@resend.dev"
 
-# App URL
+# App Public URL
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Cron secret (any random string)
-CRON_SECRET="your-cron-secret"
 ```
 
-### 3. Set Up Database
+### 3. Database Migration & Seeding
 
 ```bash
-# Run migrations
-npx prisma migrate dev --name init
+# Push schema migrations
+npx prisma migrate deploy
 
-# Seed demo data
-npm run db:seed
+# Seed demo users, venues, movies & concerts
+npx prisma db seed
 ```
 
 ### 4. Start Dev Server
@@ -122,7 +127,7 @@ Venue
 └── categories: JSON [{ name, rows[], price }]
 
 Event
-├── id, title, type (MOVIE|CONCERT), date
+├── id, title, type (MOVIE|CONCERT), date, imageUrl, description
 ├── venueId → Venue
 ├── organiserId → User
 └── status: DRAFT | PUBLISHED | SOLD_OUT | CANCELLED | COMPLETED
@@ -153,47 +158,42 @@ Waitlist
 ### Auth
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/register` | Register user |
-| POST | `/api/auth/[...nextauth]` | NextAuth sign in/out |
+| POST | `/api/auth/register` | Register user account |
+| POST | `/api/auth/[...nextauth]` | NextAuth sign in/out handlers |
 
 ### Events
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| GET | `/api/events` | Public | List events (search, filter, paginate) |
-| POST | `/api/events` | ORGANISER | Create event (auto-generates seat map) |
-| GET | `/api/events/:eventId` | Public | Event detail + all seats |
+| GET | `/api/events` | Public | List events (search, filter by type, paginate) |
+| POST | `/api/events` | ORGANISER | Create event listing (auto-generates seat map) |
+| GET | `/api/events/:eventId` | Public | Event detail + all seat statuses |
 
 ### Seats
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/seats/hold` | CUSTOMER | Hold seats (Redis atomic NX + DB) |
+| POST | `/api/seats/hold` | CUSTOMER | Hold seats (Redis atomic `SET NX` + DB timestamp) |
 | POST | `/api/seats/release` | CUSTOMER | Release held seats |
 
-### Bookings
+### Bookings & Emails
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/bookings` | CUSTOMER | Create booking (transactional) |
+| POST | `/api/bookings` | CUSTOMER | Create booking (transactional `SELECT FOR UPDATE`) |
 | GET | `/api/bookings` | CUSTOMER | List my bookings |
-| GET | `/api/bookings/:bookingRef` | Owner/ADMIN | Booking detail |
-| DELETE | `/api/bookings/:bookingRef` | Owner | Cancel booking |
+| GET | `/api/bookings/:bookingRef` | Owner/ADMIN | Booking detail + QR Code ticket download |
+| DELETE | `/api/bookings/:bookingRef` | Owner | Cancel booking & trigger waitlist offer cascade |
+| GET | `/api/test-email` | Public | Live email diagnostic test route (`?to=user@email.com`) |
 
 ### Waitlist
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/waitlist` | CUSTOMER | Join waitlist |
-| GET | `/api/waitlist` | CUSTOMER | My waitlist entries |
-
-### Venues (Admin)
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/venues` | ADMIN | Create venue with seat categories |
-| GET | `/api/venues` | Public | List venues |
+| POST | `/api/waitlist` | CUSTOMER | Join category waitlist for sold-out event |
+| GET | `/api/waitlist` | CUSTOMER | My waitlist queue entries |
 
 ### Cron Jobs (Vercel, Bearer protected)
 | Method | Endpoint | Schedule | Description |
 |---|---|---|---|
-| GET | `/api/cron/release-expired-holds` | Every 1 min | Release expired seat holds |
-| GET | `/api/cron/process-waitlist-offers` | Every 1 min | Expire old offers, offer to next |
+| GET | `/api/cron/release-expired-holds` | Daily / Scheduled | Auto-release expired seat holds |
+| GET | `/api/cron/process-waitlist-offers` | Daily / Scheduled | Expire old offers & notify next in line |
 
 ---
 
@@ -212,7 +212,7 @@ SET seat:hold:{eventId}:{seatId} {userId} NX EX 600
 
 After a successful Redis hold, we update the PostgreSQL `Seat` row: `status = HELD`, `holdByUserId`, `holdExpiresAt = now + 10 min`. This DB record serves as the source of truth for the visual seat map.
 
-A **Vercel Cron Job** (`/api/cron/release-expired-holds`) runs every minute. It queries for seats where `holdExpiresAt < NOW AND status = HELD`, updates them to `AVAILABLE`, deletes any lingering Redis keys, and triggers the waitlist for each freed seat category.
+A **Vercel Cron Job** (`/api/cron/release-expired-holds`) runs periodically to query for seats where `holdExpiresAt < NOW AND status = HELD`, updates them to `AVAILABLE`, deletes any lingering Redis keys, and triggers the waitlist for each freed seat category.
 
 ### 2. Concurrency Prevention
 
@@ -220,71 +220,36 @@ Two layers protect against simultaneous booking of the same seat:
 
 **Layer 1 — Redis `SET NX` (atomic):** Redis is single-threaded. `SET NX` is guaranteed atomic — two requests that arrive at exactly the same millisecond will still be serialized. Only one will succeed. We use a pipeline to attempt all seat holds atomically. If any `SET NX` fails, we rollback all others in the same request.
 
-**Layer 2 — Postgres `SELECT FOR UPDATE`:** During final booking confirmation (`POST /api/bookings`), we wrap the entire operation in a `prisma.$transaction()` and use raw SQL `SELECT ... FOR UPDATE` to acquire exclusive row-level locks on the `Seat` rows. This prevents two simultaneous `POST /api/bookings` requests (e.g. network retry) from both seeing `status = HELD` and both creating bookings. Only one transaction will acquire the lock; the other blocks until the first commits, then sees the updated `status = BOOKED` and fails gracefully.
+**Layer 2 — Postgres `SELECT FOR UPDATE`:** During final booking confirmation (`POST /api/bookings`), we wrap the entire operation in a `prisma.$transaction()` with custom `{ maxWait: 10000, timeout: 15000 }` timeouts and use raw SQL `SELECT ... FOR UPDATE` to acquire exclusive row-level locks on the `Seat` rows. This prevents two simultaneous `POST /api/bookings` requests from both seeing `status = HELD` and creating duplicate bookings. Only one transaction will acquire the lock; the other blocks until the first commits, then sees the updated `status = BOOKED` and fails gracefully.
 
-**Idempotency:** We also check that `seat.holdByUserId === session.user.id` inside the transaction, preventing a race where user A's hold expires, user B holds the seat, and user A's delayed request tries to book it.
+### 3. Universal Email Engine & QR Ticket Delivery
 
-### 3. Waitlist Auto-Assignment Flow
+Email sending uses a dual-provider architecture in `src/lib/email.ts`:
 
-The waitlist is a **per-event, per-category queue** with integer `position` values. When a seat becomes available (from cancellation, hold expiry, or admin action), `processWaitlistForCategory()` is called:
+1. **Nodemailer SMTP Driver (Primary):** Authenticates via TLS/STARTTLS over port 587 or 465 to services like Brevo (`smtp-relay.brevo.com`) or Gmail App Passwords. This bypasses sandbox domain restrictions and delivers ticket emails directly to **any registered user's email address**.
+2. **Resend REST API Driver (Fallback):** Makes direct HTTPS REST API calls using `Authorization: Bearer <key>`.
+
+QR Codes are generated as PNG buffers and attached via inline CIDs and rendered via secure HTTPS proxy URLs for guaranteed display across Gmail, Yahoo, Outlook, and Apple Mail.
+
+### 4. Waitlist Auto-Assignment Flow & Offer Handling
+
+The waitlist is a **per-event, per-category queue** with integer `position` values. When a seat becomes available (from cancellation, hold expiry, or admin action), `processWaitlistForCategory()` is executed:
 
 1. Query: `SELECT first WAITING entry WHERE eventId AND category ORDER BY position ASC`
 2. Query: `SELECT first AVAILABLE seat WHERE eventId AND category`
 3. If both exist: generate a secure 32-byte random `offerToken`
 4. Update `Waitlist: status = OFFERED, offeredSeatId, offerToken, offerExpiresAt = now + 15min`
 5. Update `Seat: status = HELD, holdByUserId = waitlistEntry.userId, holdExpiresAt = offerExpiresAt`
-6. Send email with link: `https://app.com/waitlist/claim/{token}` — expires in 15 minutes
+6. Send email with link: `https://ticket-booking-system-2xqf.vercel.app/waitlist/claim/{token}` — expires in 15 minutes
 
-This approach ensures the seat is **atomically reserved** for the waitlisted user for 15 minutes. No one else can book it during this window.
-
-### 4. Time-Limited Offer Handling
-
-The `/waitlist/claim/:token` page validates:
-1. Token exists in DB (`offerToken` field is unique-indexed)
-2. `offerExpiresAt > NOW` (not expired)
-3. `status === OFFERED` (not already booked or expired)
-4. `userId === session.user.id` (belongs to this user)
-
-If valid, it redirects to checkout with the specific `seatId` pre-filled. If the user completes booking, `Waitlist.status = BOOKED`.
-
-The **second cron job** (`/api/cron/process-waitlist-offers`) runs every minute. It finds `Waitlist` entries where `status = OFFERED AND offerExpiresAt < NOW`, marks them `EXPIRED`, releases the held seat back to `AVAILABLE`, and calls `processWaitlistForCategory()` again — offering to the **next person in line**.
-
-This creates a resilient FIFO queue with guaranteed time-limited offers, automatic fallback, and no manual intervention required.
+The `/waitlist/claim/:token` page validates the token, checks that `offerExpiresAt > NOW`, and redirects to checkout with the specific seat pre-filled. If unclaimed after 15 minutes, the cron job marks the offer `EXPIRED` and offers the seat to the next person in line.
 
 ---
 
-## 🚀 Deploying to Vercel
-
-### 1. Push to GitHub
-```bash
-git add . && git commit -m "Enterprise ticket booking system"
-gh repo create ticket-booking-app --public --push
-```
-
-### 2. Deploy
-1. Go to [vercel.com](https://vercel.com) → **Add New Project** → Import your GitHub repo
-2. Add all environment variables from `.env.example` in the Vercel dashboard
-3. Set **Framework Preset** to Next.js
-4. Click **Deploy**
-
-### 3. Run Migrations on Production
-```bash
-npx prisma migrate deploy
-npm run db:seed
-```
-
-Or set `DIRECT_URL` in Vercel and run via Vercel CLI:
-```bash
-vercel env pull
-npx prisma migrate deploy
-```
-
----
-
-## 📦 Deliverables
+## 📦 Deliverables Checklist
 
 - [x] Source code (this repository)
-- [x] `.env.example` with all variable names
-- [x] `README.md` with setup guide + API docs + DB schema
-- [x] Hosted URL on Vercel
-- [x] System design write-up (above, ~800 words)
+- [x] `.env.example` with all environment variable names
+- [x] `README.md` with setup guide + API docs + DB schema + live production URL
+- [x] Hosted URL on Vercel (`https://ticket-booking-system-2xqf.vercel.app`)
+- [x] System design write-up (~800 words)
