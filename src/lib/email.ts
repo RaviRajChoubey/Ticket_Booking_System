@@ -18,16 +18,22 @@ export async function sendTicketEmail(options: SendEmailOptions) {
   const smtpUser = rawSmtpUser.trim();
   const smtpPass = rawSmtpPass.replace(/\s+/g, ""); // strip spaces from Google 16-char app passcodes
 
+  let smtpErrorDetails: string | null = null;
+
   if (smtpUser && smtpPass) {
     try {
-      const port = Number(process.env.SMTP_PORT) || 465;
-      const host = process.env.SMTP_HOST || "smtp.gmail.com";
+      const port = Number(process.env.SMTP_PORT) || 587;
+      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
       const secure = port === 465;
 
       const transporter = nodemailer.createTransport({
         host,
         port,
         secure,
+        requireTLS: port === 587,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
         auth: {
           user: smtpUser,
           pass: smtpPass,
@@ -39,7 +45,7 @@ export async function sendTicketEmail(options: SendEmailOptions) {
         content: typeof a.content === "string" ? Buffer.from(a.content, "base64") : a.content,
       }));
 
-      // Ensure 'from' is a valid email address (b67781001@smtp-brevo.com is an SMTP username, not a sender email)
+      // Ensure 'from' is a valid email address format
       const senderEmail = (smtpUser.includes("@") && !smtpUser.includes("@smtp-brevo.com"))
         ? smtpUser
         : (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev");
@@ -55,37 +61,47 @@ export async function sendTicketEmail(options: SendEmailOptions) {
       console.log("[EMAIL_SENT_SMTP_SUCCESS]", info.messageId);
       return { success: true, provider: "smtp", messageId: info.messageId };
     } catch (err: any) {
-      console.error("[EMAIL_SMTP_ERROR]", err?.message || err);
-      // Fall through to Resend if SMTP fails
+      smtpErrorDetails = err?.message || String(err);
+      console.error("[EMAIL_SMTP_ERROR]", smtpErrorDetails);
     }
   }
 
-  // 2. Try Resend API
-  try {
-    const resend = getResend();
+  // 2. Try Resend API (if configured)
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey && resendKey !== "re_XXXXXXXXXXXXXXXXXXXXXXXXXXXX") {
+    try {
+      const resend = getResend();
 
-    const formattedResendAttachments = attachments?.map((a) => ({
-      filename: a.filename,
-      content: typeof a.content === "string" ? a.content : a.content.toString("base64"),
-    }));
+      const formattedResendAttachments = attachments?.map((a) => ({
+        filename: a.filename,
+        content: typeof a.content === "string" ? a.content : a.content.toString("base64"),
+      }));
 
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      attachments: formattedResendAttachments,
-      html,
-    });
+      const result = await resend.emails.send({
+        from: FROM_EMAIL,
+        to,
+        subject,
+        attachments: formattedResendAttachments,
+        html,
+      });
 
-    if (result.error) {
-      console.error("[EMAIL_RESEND_ERROR]", result.error);
-      return { success: false, provider: "resend", error: result.error };
+      if (result.error) {
+        console.error("[EMAIL_RESEND_ERROR]", result.error);
+        return { success: false, provider: "resend", smtpError: smtpErrorDetails, resendError: result.error };
+      }
+
+      console.log("[EMAIL_SENT_RESEND_SUCCESS]", result.data);
+      return { success: true, provider: "resend", data: result.data };
+    } catch (err: any) {
+      console.error("[EMAIL_RESEND_EXCEPTION]", err?.message || err);
+      return { success: false, provider: "resend", smtpError: smtpErrorDetails, resendError: err?.message };
     }
-
-    console.log("[EMAIL_SENT_RESEND_SUCCESS]", result.data);
-    return { success: true, provider: "resend", data: result.data };
-  } catch (err: any) {
-    console.error("[EMAIL_RESEND_EXCEPTION]", err?.message || err);
-    return { success: false, provider: "resend", error: err?.message };
   }
+
+  // Return exact error if neither provider succeeded
+  return {
+    success: false,
+    provider: smtpErrorDetails ? "smtp" : "none",
+    smtpError: smtpErrorDetails || "SMTP credentials (SMTP_USER/SMTP_PASS) or RESEND_API_KEY missing in environment variables",
+  };
 }
