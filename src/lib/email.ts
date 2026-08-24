@@ -45,10 +45,11 @@ export async function sendTicketEmail(options: SendEmailOptions) {
         content: typeof a.content === "string" ? Buffer.from(a.content, "base64") : a.content,
       }));
 
-      // Ensure 'from' is a valid email address format
+      // Ensure 'from' is your verified Brevo sender email (e.g. ravirajchoubey091@gmail.com)
+      const fallbackSender = process.env.SENDER_EMAIL || process.env.RESEND_FROM_EMAIL || "ravirajchoubey091@gmail.com";
       const senderEmail = (smtpUser.includes("@") && !smtpUser.includes("@smtp-brevo.com"))
         ? smtpUser
-        : (process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev");
+        : fallbackSender;
 
       const info = await transporter.sendMail({
         from: `TicketHub <${senderEmail}>`,
